@@ -362,6 +362,79 @@
             font-weight: 700;
             cursor: pointer;
         }
+
+        /* Status Breakdown Styles */
+        .status-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-card {
+            padding: 1.2rem;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .summary-card.in-card { background-color: var(--green-bg); color: #065f46; border-color: var(--green); }
+        .summary-card.low-card { background-color: var(--amber-bg); color: #92400e; border-color: var(--amber); }
+        .summary-card.out-card { background-color: var(--red-bg); color: #991b1b; border-color: var(--red); }
+
+        .summary-card h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+        .summary-card .count { font-size: 1.8rem; font-weight: 800; }
+        .summary-card .hint { font-size: 0.75rem; opacity: 0.8; margin-top: 0.2rem; }
+
+        .breakdown-details {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .breakdown-details.active {
+            display: block;
+        }
+
+        .breakdown-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.8rem;
+        }
+
+        .breakdown-chip {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: white;
+            border: 1px solid var(--border-color);
+        }
+
+        .submitted-lock-banner {
+            background: var(--green-bg);
+            border: 1px solid var(--green);
+            color: #065f46;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .submitted-lock-banner h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -406,18 +479,27 @@
             <div class="locked-date-badge" id="checklist-date-display">Today</div>
         </div>
 
-        <div class="progress-bar-container">
-            <div id="progress-bar" class="progress-bar"></div>
+        <div id="checklist-active-content">
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div id="checklist-container"></div>
+
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Staff Signature Name</label>
+                    <input type="text" id="employee-name" placeholder="Enter your full name">
+                </div>
+                <button id="submit-checklist-btn" class="btn-primary" disabled onclick="submitChecklist()">Submit Inspection Report</button>
+            </div>
         </div>
 
-        <div id="checklist-container"></div>
-
-        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Staff Signature Name</label>
-                <input type="text" id="employee-name" placeholder="Enter your full name">
+        <div id="checklist-locked-content" style="display: none;">
+            <div class="submitted-lock-banner">
+                <h3>✓ Closing Inspection Submitted for Today</h3>
+                <p>The daily closing checklist has already been completed. Further submissions for today are locked.</p>
             </div>
-            <button id="submit-checklist-btn" class="btn-primary" disabled onclick="submitChecklist()">Submit Inspection Report</button>
         </div>
     </div>
 
@@ -468,9 +550,35 @@
     <div id="buying-view" class="view-section">
         <button class="btn-back" onclick="goHome()">← Back to Home</button>
         <div class="section-header">
-            <h2>Restock Buying List</h2>
+            <h2>Restock & Inventory Breakdown</h2>
         </div>
 
+        <!-- Stock Category Interactive Cards -->
+        <div class="status-summary-grid">
+            <div class="summary-card in-card" onclick="toggleBreakdown('IN')">
+                <h3>In Stock</h3>
+                <div class="count" id="count-in">0</div>
+                <div class="hint">Click to view items</div>
+            </div>
+            <div class="summary-card low-card" onclick="toggleBreakdown('LOW')">
+                <h3>Low Stock</h3>
+                <div class="count" id="count-low">0</div>
+                <div class="hint">Click to view items</div>
+            </div>
+            <div class="summary-card out-card" onclick="toggleBreakdown('OUT')">
+                <h3>Out of Stock</h3>
+                <div class="count" id="count-out">0</div>
+                <div class="hint">Click to view items</div>
+            </div>
+        </div>
+
+        <!-- Expandable Item Breakdown Panel -->
+        <div id="breakdown-details" class="breakdown-details">
+            <h3 id="breakdown-title" style="color: var(--primary);">Items Breakdown</h3>
+            <div id="breakdown-list" class="breakdown-list"></div>
+        </div>
+
+        <h3 style="color: var(--primary); margin: 1.5rem 0 1rem 0;">Manual Buying List</h3>
         <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
             <input type="text" id="new-buying-item" placeholder="Add custom item to buy...">
             <button class="btn-primary" style="width: auto; white-space: nowrap;" onclick="addBuyingItem()">Add</button>
@@ -562,9 +670,12 @@
 
         let itemStatus = {};
         let currentMode = 'IN';
+        let currentActiveBreakdown = null;
+
         let buyingList = JSON.parse(localStorage.getItem('buyingList') || '[]');
         let checklistLogs = JSON.parse(localStorage.getItem('checklistLogs') || '[]');
         let stockLogs = JSON.parse(localStorage.getItem('stockLogs') || '[]');
+        let latestInspectionStatus = JSON.parse(localStorage.getItem('latestInspectionStatus') || '{}');
 
         const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -572,13 +683,36 @@
             document.getElementById('checklist-date-display').innerText = todayStr;
             document.getElementById('inout-date-display').innerText = todayStr;
 
+            checkChecklistSubmissionStatus();
             renderChecklist();
             populateItemDropdown();
             renderBuyingList();
             renderLogs();
+            updateBreakdownCounts();
         });
 
+        function isChecklistSubmittedToday() {
+            const lastSubmittedDate = localStorage.getItem('lastSubmittedDate');
+            return lastSubmittedDate === todayStr;
+        }
+
+        function checkChecklistSubmissionStatus() {
+            const activeContent = document.getElementById('checklist-active-content');
+            const lockedContent = document.getElementById('checklist-locked-content');
+
+            if (isChecklistSubmittedToday()) {
+                activeContent.style.display = 'none';
+                lockedContent.style.display = 'block';
+            } else {
+                activeContent.style.display = 'block';
+                lockedContent.style.display = 'none';
+            }
+        }
+
         function openSection(id) {
+            if (id === 'checklist-view') {
+                checkChecklistSubmissionStatus();
+            }
             document.getElementById('home-hub').style.display = 'none';
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -674,6 +808,8 @@
             });
 
             localStorage.setItem('buyingList', JSON.stringify(buyingList));
+            localStorage.setItem('latestInspectionStatus', JSON.stringify(itemStatus));
+            latestInspectionStatus = { ...itemStatus };
 
             const log = {
                 date: todayStr,
@@ -684,15 +820,64 @@
 
             checklistLogs.unshift(log);
             localStorage.setItem('checklistLogs', JSON.stringify(checklistLogs));
+            localStorage.setItem('lastSubmittedDate', todayStr);
 
             alert('Checklist inspection submitted! Restock items appended to Buying List.');
             document.getElementById('employee-name').value = '';
             itemStatus = {};
-            renderChecklist();
-            updateProgress();
+
+            updateBreakdownCounts();
             renderBuyingList();
             renderLogs();
+            checkChecklistSubmissionStatus();
             goHome();
+        }
+
+        function updateBreakdownCounts() {
+            let inCount = 0, lowCount = 0, outCount = 0;
+            Object.values(latestInspectionStatus).forEach(status => {
+                if (status === 'IN') inCount++;
+                if (status === 'LOW') lowCount++;
+                if (status === 'OUT') outCount++;
+            });
+
+            document.getElementById('count-in').innerText = inCount;
+            document.getElementById('count-low').innerText = lowCount;
+            document.getElementById('count-out').innerText = outCount;
+        }
+
+        function toggleBreakdown(statusType) {
+            const detailsPanel = document.getElementById('breakdown-details');
+            const titleEl = document.getElementById('breakdown-title');
+            const listEl = document.getElementById('breakdown-list');
+
+            if (currentActiveBreakdown === statusType && detailsPanel.classList.contains('active')) {
+                detailsPanel.classList.remove('active');
+                currentActiveBreakdown = null;
+                return;
+            }
+
+            currentActiveBreakdown = statusType;
+            detailsPanel.classList.add('active');
+
+            const labels = { IN: 'In Stock Items', LOW: 'Low Stock Items', OUT: 'Out of Stock Items' };
+            titleEl.innerText = labels[statusType];
+
+            const matchingItems = Object.entries(latestInspectionStatus)
+                .filter(([_, status]) => status === statusType)
+                .map(([name, _]) => name);
+
+            listEl.innerHTML = '';
+            if (matchingItems.length === 0) {
+                listEl.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No items recorded in this state.</p>';
+            } else {
+                matchingItems.forEach(item => {
+                    const chip = document.createElement('div');
+                    chip.className = 'breakdown-chip';
+                    chip.innerText = item;
+                    listEl.appendChild(chip);
+                });
+            }
         }
 
         function setMovementMode(mode) {
@@ -790,3 +975,6 @@
     </script>
 </body>
 </html>
+
+
+    
