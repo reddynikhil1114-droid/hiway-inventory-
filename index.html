@@ -340,6 +340,7 @@
         }
 
         .badge-in { background: var(--green-bg); color: #065f46; }
+        .badge-low { background: var(--amber-bg); color: #92400e; }
         .badge-out { background: var(--red-bg); color: #991b1b; }
 
         .buying-item {
@@ -363,7 +364,6 @@
             cursor: pointer;
         }
 
-        /* Status Breakdown Styles */
         .status-summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -553,7 +553,6 @@
             <h2>Restock & Inventory Breakdown</h2>
         </div>
 
-        <!-- Stock Category Interactive Cards -->
         <div class="status-summary-grid">
             <div class="summary-card in-card" onclick="toggleBreakdown('IN')">
                 <h3>In Stock</h3>
@@ -572,7 +571,6 @@
             </div>
         </div>
 
-        <!-- Expandable Item Breakdown Panel -->
         <div id="breakdown-details" class="breakdown-details">
             <h3 id="breakdown-title" style="color: var(--primary);">Items Breakdown</h3>
             <div id="breakdown-list" class="breakdown-list"></div>
@@ -601,7 +599,7 @@
                     <th>Date</th>
                     <th>Time</th>
                     <th>Staff</th>
-                    <th>Breakdown</th>
+                    <th>In / Low / Out Summary</th>
                 </tr>
             </thead>
             <tbody id="checklist-logs-body"></tbody>
@@ -815,7 +813,8 @@
                 date: todayStr,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 staff: staff,
-                breakdown: `${inCount} In Stock, ${lowCount} Low, ${outCount} Out`
+                counts: { in: inCount, low: lowCount, out: outCount },
+                breakdown: `<span class="badge badge-in">In: ${inCount}</span> <span class="badge badge-low">Low: ${lowCount}</span> <span class="badge badge-out">Out: ${outCount}</span>`
             };
 
             checklistLogs.unshift(log);
@@ -975,6 +974,3 @@
     </script>
 </body>
 </html>
-
-
-    
