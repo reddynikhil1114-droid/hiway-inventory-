@@ -331,6 +331,59 @@
             font-weight: 600;
         }
 
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .clickable-row:hover {
+            background-color: #f1f5f9;
+        }
+
+        .log-expandable-row {
+            display: none;
+            background-color: #f8fafc;
+        }
+
+        .log-expandable-row.active {
+            display: table-row;
+        }
+
+        .log-details-box {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .log-detail-section {
+            font-size: 0.85rem;
+        }
+
+        .log-detail-title {
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            display: inline-block;
+        }
+
+        .log-item-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.2rem;
+        }
+
+        .log-item-tag {
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .tag-in { background: var(--green-bg); color: #065f46; }
+        .tag-low { background: var(--amber-bg); color: #92400e; }
+        .tag-out { background: var(--red-bg); color: #991b1b; }
+
         .badge {
             padding: 0.25rem 0.6rem;
             border-radius: 6px;
@@ -592,7 +645,7 @@
             <h2>Submission & Stock Movement Logs</h2>
         </div>
 
-        <h3 style="color: var(--primary); margin: 1rem 0 0.5rem 0;">Closing Inspections</h3>
+        <h3 style="color: var(--primary); margin: 1rem 0 0.5rem 0;">Closing Inspections <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">(Click any row to view item details)</span></h3>
         <table>
             <thead>
                 <tr>
@@ -792,15 +845,16 @@
                 return;
             }
 
-            let inCount = 0, lowCount = 0, outCount = 0;
+            let inItems = [], lowItems = [], outItems = [];
+
             Object.entries(itemStatus).forEach(([name, status]) => {
-                if (status === 'IN') inCount++;
+                if (status === 'IN') inItems.push(name);
                 if (status === 'LOW') {
-                    lowCount++;
+                    lowItems.push(name);
                     if (!buyingList.includes(name)) buyingList.push(name);
                 }
                 if (status === 'OUT') {
-                    outCount++;
+                    outItems.push(name);
                     if (!buyingList.includes(name)) buyingList.push(name);
                 }
             });
@@ -813,8 +867,10 @@
                 date: todayStr,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 staff: staff,
-                counts: { in: inCount, low: lowCount, out: outCount },
-                breakdown: `<span class="badge badge-in">In: ${inCount}</span> <span class="badge badge-low">Low: ${lowCount}</span> <span class="badge badge-out">Out: ${outCount}</span>`
+                inItems: inItems,
+                lowItems: lowItems,
+                outItems: outItems,
+                breakdown: `<span class="badge badge-in">In: ${inItems.length}</span> <span class="badge badge-low">Low: ${lowItems.length}</span> <span class="badge badge-out">Out: ${outItems.length}</span>`
             };
 
             checklistLogs.unshift(log);
@@ -957,11 +1013,48 @@
             renderBuyingList();
         }
 
+        function toggleLogDetails(index) {
+            const detailRow = document.getElementById(`log-detail-row-${index}`);
+            if (detailRow) {
+                detailRow.classList.toggle('active');
+            }
+        }
+
         function renderLogs() {
             const cBody = document.getElementById('checklist-logs-body');
             cBody.innerHTML = checklistLogs.length === 0 ? '<tr><td colspan="4" style="text-align:center;">No submissions logged yet.</td></tr>' : '';
-            checklistLogs.forEach(l => {
-                cBody.innerHTML += `<tr><td>${l.date}</td><td>${l.time}</td><td>${l.staff}</td><td>${l.breakdown}</td></tr>`;
+            
+            checklistLogs.forEach((l, index) => {
+                const inList = (l.inItems || []).map(i => `<span class="log-item-tag tag-in">${i}</span>`).join(' ') || '<span style="color:var(--text-muted)">None</span>';
+                const lowList = (l.lowItems || []).map(i => `<span class="log-item-tag tag-low">${i}</span>`).join(' ') || '<span style="color:var(--text-muted)">None</span>';
+                const outList = (l.outItems || []).map(i => `<span class="log-item-tag tag-out">${i}</span>`).join(' ') || '<span style="color:var(--text-muted)">None</span>';
+
+                cBody.innerHTML += `
+                    <tr class="clickable-row" onclick="toggleLogDetails(${index})">
+                        <td>${l.date}</td>
+                        <td>${l.time}</td>
+                        <td>${l.staff}</td>
+                        <td>${l.breakdown} ▾</td>
+                    </tr>
+                    <tr id="log-detail-row-${index}" class="log-expandable-row">
+                        <td colspan="4">
+                            <div class="log-details-box">
+                                <div class="log-detail-section">
+                                    <span class="log-detail-title" style="color:#065f46">In Stock (${(l.inItems || []).length}):</span>
+                                    <div class="log-item-tags">${inList}</div>
+                                </div>
+                                <div class="log-detail-section">
+                                    <span class="log-detail-title" style="color:#92400e">Low Stock (${(l.lowItems || []).length}):</span>
+                                    <div class="log-item-tags">${lowList}</div>
+                                </div>
+                                <div class="log-detail-section">
+                                    <span class="log-detail-title" style="color:#991b1b">Out of Stock (${(l.outItems || []).length}):</span>
+                                    <div class="log-item-tags">${outList}</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             });
 
             const sBody = document.getElementById('stock-logs-body');
