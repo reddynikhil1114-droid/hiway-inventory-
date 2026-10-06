@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiway Dhaba - Daily Inventory Portal</title>
+    <style>
+        :root {
+            --primary: #ea580c;
+            --primary-hover: #c2410c;
+            --primary-light: #ffedd5;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --green: #10b981;
+            --green-bg: #d1fae5;
+            --amber: #f59e0b;
+            --amber-bg: #fef3c7;
+            --red: #ef4444;
+            --red-bg: #fee2e2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            padding: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-top: 0.4rem;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--card-bg);
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .hub-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .hub-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+            transition: all 0.2s ease;
+        }
+
+        .hub-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 20px -5px rgba(234, 88, 12, 0.15);
+        }
+
+        .hub-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 1.2rem auto;
+        }
+
+        .hub-card h2 {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .hub-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .view-section {
+            display: none;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .locked-date-badge {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid #cbd5e1;
+            user-select: none;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #f1f5f9;
+            height: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .category-title {
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-light);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .item-card {
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        .status-group {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .status-btn {
+            flex: 1;
+            padding: 0.4rem 0.2rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-muted);
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .status-btn.selected-in {
+            background-color: var(--green-bg);
+            color: #065f46;
+            border-color: var(--green);
+        }
+
+        .status-btn.selected-low {
+            background-color: var(--amber-bg);
+            color: #92400e;
+            border-color: var(--amber);
+        }
+
+        .status-btn.selected-out {
+            background-color: var(--red-bg);
+            color: #991b1b;
+            border-color: var(--red);
+        }
+
+        .toggle-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 0.3rem;
+            border-radius: 12px;
+            gap: 0.3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 0.75rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .toggle-btn.active-in {
+            background: var(--green);
+            color: white;
+        }
+
+        .toggle-btn.active-out {
+            background: var(--red);
+            color: white;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #f8fafc;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-primary:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+
+        .badge-in { background: var(--green-bg); color: #065f46; }
+        .badge-out { background: var(--red-bg); color: #991b1b; }
+
+        .buying-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-delete {
+            background: var(--red-bg);
+            color: var(--red);
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Hiway Dhaba</h1>
+        <p class="subtitle">Apex, NC — Operational Inventory Management</p>
+    </header>
+
+    <!-- LANDING PAGE HUB -->
+    <div id="home-hub" class="hub-container">
+        <div class="hub-card" onclick="openSection('checklist-view')">
+            <div class="hub-icon">📋</div>
+            <h2>Closing Checklist</h2>
+            <p>42-item stock inspection & restock alerts</p>
+        </div>
+        <div class="hub-card" onclick="openSection('inout-view')">
+            <div class="hub-icon">🔄</div>
+            <h2>Inventory IN & OUT</h2>
+            <p>Record supplier incoming & kitchen outgoing stock</p>
+        </div>
+        <div class="hub-card" onclick="openSection('buying-view')">
+            <div class="hub-icon">🛒</div>
+            <h2>Buying List</h2>
+            <p>View & manage items required for purchase</p>
+        </div>
+        <div class="hub-card" onclick="openSection('data-view')">
+            <div class="hub-icon">📊</div>
+            <h2>Checklist Data & Logs</h2>
+            <p>Review submitted closing & movement logs</p>
+        </div>
+    </div>
+
+    <!-- 1. CLOSING CHECKLIST VIEW -->
+    <div id="checklist-view" class="view-section">
+        <button class="btn-back" onclick="goHome()">← Back to Home</button>
+        <div class="section-header">
+            <div>
+                <h2>Daily Closing Checklist</h2>
+                <p id="counter-display" style="color: var(--primary); font-weight: bold; margin-top: 0.2rem;">0 / 42 Items Checked</p>
+            </div>
+            <div class="locked-date-badge" id="checklist-date-display">Today</div>
+        </div>
+
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div id="checklist-container"></div>
+
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Staff Signature Name</label>
+                <input type="text" id="employee-name" placeholder="Enter your full name">
+            </div>
+            <button id="submit-checklist-btn" class="btn-primary" disabled onclick="submitChecklist()">Submit Inspection Report</button>
+        </div>
+    </div>
+
+    <!-- 2. INVENTORY IN / OUT VIEW -->
+    <div id="inout-view" class="view-section">
+        <button class="btn-back" onclick="goHome()">← Back to Home</button>
+        <div class="section-header">
+            <h2>Inventory Movement</h2>
+            <div class="locked-date-badge" id="inout-date-display">Today</div>
+        </div>
+
+        <div class="toggle-group">
+            <button id="mode-in-btn" class="toggle-btn active-in" onclick="setMovementMode('IN')">📥 Record IN (Incoming)</button>
+            <button id="mode-out-btn" class="toggle-btn" onclick="setMovementMode('OUT')">📤 Record OUT (Usage)</button>
+        </div>
+
+        <form onsubmit="handleStockSubmit(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Select Item</label>
+                    <select id="stock-item-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" id="stock-qty" min="1" placeholder="Qty" required>
+                </div>
+                <div class="form-group">
+                    <label>Unit</label>
+                    <select id="stock-unit">
+                        <option>Packets</option>
+                        <option>Kg</option>
+                        <option>Lbs</option>
+                        <option>Boxes</option>
+                        <option>Cases</option>
+                        <option>Units</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Logged By Staff</label>
+                    <input type="text" id="stock-staff" placeholder="Staff Name" required>
+                </div>
+            </div>
+            <button type="submit" id="movement-submit-btn" class="btn-primary">Save Stock Entry</button>
+        </form>
+    </div>
+
+    <!-- 3. BUYING LIST VIEW -->
+    <div id="buying-view" class="view-section">
+        <button class="btn-back" onclick="goHome()">← Back to Home</button>
+        <div class="section-header">
+            <h2>Restock Buying List</h2>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <input type="text" id="new-buying-item" placeholder="Add custom item to buy...">
+            <button class="btn-primary" style="width: auto; white-space: nowrap;" onclick="addBuyingItem()">Add</button>
+        </div>
+
+        <div id="buying-list-container"></div>
+    </div>
+
+    <!-- 4. DATA LOGS VIEW -->
+    <div id="data-view" class="view-section">
+        <button class="btn-back" onclick="goHome()">← Back to Home</button>
+        <div class="section-header">
+            <h2>Submission & Stock Movement Logs</h2>
+        </div>
+
+        <h3 style="color: var(--primary); margin: 1rem 0 0.5rem 0;">Closing Inspections</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Staff</th>
+                    <th>Breakdown</th>
+                </tr>
+            </thead>
+            <tbody id="checklist-logs-body"></tbody>
+        </table>
+
+        <h3 style="color: var(--primary); margin: 2rem 0 0.5rem 0;">Stock IN / OUT Entries</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Staff</th>
+                </tr>
+            </thead>
+            <tbody id="stock-logs-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const inventoryItems = [
+            { category: "Proteins & Dairy", name: "Raw Chicken" },
+            { category: "Proteins & Dairy", name: "Chicken Wings" },
+            { category: "Proteins & Dairy", name: "Marinated Chicken" },
+            { category: "Proteins & Dairy", name: "Paneer" },
+            { category: "Proteins & Dairy", name: "Butter" },
+            { category: "Proteins & Dairy", name: "Eggs" },
+            { category: "Breads & Naans", name: "Butter Naan" },
+            { category: "Breads & Naans", name: "Tandoori Naan" },
+            { category: "Breads & Naans", name: "Garlic Naan" },
+            { category: "Breads & Naans", name: "Poori" },
+            { category: "Snacks & Appetizers", name: "Onion Samosa" },
+            { category: "Snacks & Appetizers", name: "Punjabi Samosa" },
+            { category: "Snacks & Appetizers", name: "Aloo Tiki" },
+            { category: "Snacks & Appetizers", name: "Noodles" },
+            { category: "Produce & Veggies", name: "Baby Corn" },
+            { category: "Produce & Veggies", name: "Gobi" },
+            { category: "Produce & Veggies", name: "Frozen Vegetables" },
+            { category: "Produce & Veggies", name: "Aloo (Potatoes)" },
+            { category: "Produce & Veggies", name: "Cabbage" },
+            { category: "Produce & Veggies", name: "Carrot" },
+            { category: "Produce & Veggies", name: "Capsicum" },
+            { category: "Produce & Veggies", name: "Onions" },
+            { category: "Produce & Veggies", name: "Mirchi (Green Chilies)" },
+            { category: "Produce & Veggies", name: "Mint" },
+            { category: "Produce & Veggies", name: "Coriander" },
+            { category: "Produce & Veggies", name: "Curry Leaf" },
+            { category: "Produce & Veggies", name: "Garlic" },
+            { category: "Produce & Veggies", name: "Ginger" },
+            { category: "Pantry Staples & Flours", name: "Basin (Besan)" },
+            { category: "Pantry Staples & Flours", name: "Rice Flour" },
+            { category: "Pantry Staples & Flours", name: "Corn Flour" },
+            { category: "Pantry Staples & Flours", name: "Sugar" },
+            { category: "Pantry Staples & Flours", name: "All Spices" },
+            { category: "Pantry Staples & Flours", name: "Oil" },
+            { category: "Pantry Staples & Flours", name: "Ginger Garlic Paste" },
+            { category: "Pantry Staples & Flours", name: "Gongura Paste" },
+            { category: "Pantry Staples & Flours", name: "Kaju (Cashews)" },
+            { category: "Beverages", name: "Mango Lassi" },
+            { category: "Beverages", name: "Coke and Sprite" },
+            { category: "Disposables & Supplies", name: "Takeout Boxes and Plates" },
+            { category: "Disposables & Supplies", name: "Tissue" },
+            { category: "Disposables & Supplies", name: "Tea Cups" }
+        ];
+
+        let itemStatus = {};
+        let currentMode = 'IN';
+        let buyingList = JSON.parse(localStorage.getItem('buyingList') || '[]');
+        let checklistLogs = JSON.parse(localStorage.getItem('checklistLogs') || '[]');
+        let stockLogs = JSON.parse(localStorage.getItem('stockLogs') || '[]');
+
+        const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('checklist-date-display').innerText = todayStr;
+            document.getElementById('inout-date-display').innerText = todayStr;
+
+            renderChecklist();
+            populateItemDropdown();
+            renderBuyingList();
+            renderLogs();
+        });
+
+        function openSection(id) {
+            document.getElementById('home-hub').style.display = 'none';
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function goHome() {
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById('home-hub').style.display = 'grid';
+        }
+
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+            const categories = [...new Set(inventoryItems.map(i => i.category))];
+
+            categories.forEach(cat => {
+                const title = document.createElement('div');
+                title.className = 'category-title';
+                title.innerText = cat;
+                container.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'items-grid';
+
+                inventoryItems.filter(i => i.category === cat).forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+
+                    const name = document.createElement('div');
+                    name.className = 'item-name';
+                    name.innerText = item.name;
+
+                    const group = document.createElement('div');
+                    group.className = 'status-group';
+
+                    const btnIn = createStatusBtn('In Stock', 'selected-in', item.name, 'IN');
+                    const btnLow = createStatusBtn('Low Stock', 'selected-low', item.name, 'LOW');
+                    const btnOut = createStatusBtn('Out of Stock', 'selected-out', item.name, 'OUT');
+
+                    group.appendChild(btnIn);
+                    group.appendChild(btnLow);
+                    group.appendChild(btnOut);
+
+                    card.appendChild(name);
+                    card.appendChild(group);
+                    grid.appendChild(card);
+                });
+
+                container.appendChild(grid);
+            });
+        }
+
+        function createStatusBtn(label, selectedClass, itemName, statusVal) {
+            const btn = document.createElement('button');
+            btn.className = 'status-btn';
+            btn.innerText = label;
+            btn.onclick = () => {
+                itemStatus[itemName] = statusVal;
+                const parent = btn.parentElement;
+                parent.querySelectorAll('.status-btn').forEach(b => b.className = 'status-btn');
+                btn.classList.add(selectedClass);
+                updateProgress();
+            };
+            return btn;
+        }
+
+        function updateProgress() {
+            const checkedCount = Object.keys(itemStatus).length;
+            const total = inventoryItems.length;
+            document.getElementById('counter-display').innerText = `${checkedCount} / ${total} Items Checked`;
+            document.getElementById('progress-bar').style.width = `${(checkedCount / total) * 100}%`;
+            document.getElementById('submit-checklist-btn').disabled = checkedCount < total;
+        }
+
+        function submitChecklist() {
+            const staff = document.getElementById('employee-name').value.trim();
+            if (!staff) {
+                alert('Please enter your staff signature name.');
+                return;
+            }
+
+            let inCount = 0, lowCount = 0, outCount = 0;
+            Object.entries(itemStatus).forEach(([name, status]) => {
+                if (status === 'IN') inCount++;
+                if (status === 'LOW') {
+                    lowCount++;
+                    if (!buyingList.includes(name)) buyingList.push(name);
+                }
+                if (status === 'OUT') {
+                    outCount++;
+                    if (!buyingList.includes(name)) buyingList.push(name);
+                }
+            });
+
+            localStorage.setItem('buyingList', JSON.stringify(buyingList));
+
+            const log = {
+                date: todayStr,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                staff: staff,
+                breakdown: `${inCount} In Stock, ${lowCount} Low, ${outCount} Out`
+            };
+
+            checklistLogs.unshift(log);
+            localStorage.setItem('checklistLogs', JSON.stringify(checklistLogs));
+
+            alert('Checklist inspection submitted! Restock items appended to Buying List.');
+            document.getElementById('employee-name').value = '';
+            itemStatus = {};
+            renderChecklist();
+            updateProgress();
+            renderBuyingList();
+            renderLogs();
+            goHome();
+        }
+
+        function setMovementMode(mode) {
+            currentMode = mode;
+            const inBtn = document.getElementById('mode-in-btn');
+            const outBtn = document.getElementById('mode-out-btn');
+            if (mode === 'IN') {
+                inBtn.className = 'toggle-btn active-in';
+                outBtn.className = 'toggle-btn';
+            } else {
+                inBtn.className = 'toggle-btn';
+                outBtn.className = 'toggle-btn active-out';
+            }
+        }
+
+        function populateItemDropdown() {
+            const select = document.getElementById('stock-item-select');
+            select.innerHTML = '';
+            inventoryItems.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.name;
+                opt.innerText = item.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function handleStockSubmit(e) {
+            e.preventDefault();
+            const log = {
+                date: todayStr,
+                type: currentMode,
+                item: document.getElementById('stock-item-select').value,
+                qty: `${document.getElementById('stock-qty').value} ${document.getElementById('stock-unit').value}`,
+                staff: document.getElementById('stock-staff').value.trim()
+            };
+
+            stockLogs.unshift(log);
+            localStorage.setItem('stockLogs', JSON.stringify(stockLogs));
+
+            alert(`Logged ${currentMode} movement!`);
+            document.getElementById('stock-qty').value = '';
+            document.getElementById('stock-staff').value = '';
+            renderLogs();
+            goHome();
+        }
+
+        function renderBuyingList() {
+            const container = document.getElementById('buying-list-container');
+            container.innerHTML = '';
+            if (buyingList.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted);">No restock items in list.</p>';
+                return;
+            }
+            buyingList.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'buying-item';
+                div.innerHTML = `
+                    <span style="font-weight: 600;">${item}</span>
+                    <button class="btn-delete" onclick="removeBuyingItem(${index})">Remove</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addBuyingItem() {
+            const val = document.getElementById('new-buying-item').value.trim();
+            if (val) {
+                buyingList.push(val);
+                localStorage.setItem('buyingList', JSON.stringify(buyingList));
+                document.getElementById('new-buying-item').value = '';
+                renderBuyingList();
+            }
+        }
+
+        function removeBuyingItem(index) {
+            buyingList.splice(index, 1);
+            localStorage.setItem('buyingList', JSON.stringify(buyingList));
+            renderBuyingList();
+        }
+
+        function renderLogs() {
+            const cBody = document.getElementById('checklist-logs-body');
+            cBody.innerHTML = checklistLogs.length === 0 ? '<tr><td colspan="4" style="text-align:center;">No submissions logged yet.</td></tr>' : '';
+            checklistLogs.forEach(l => {
+                cBody.innerHTML += `<tr><td>${l.date}</td><td>${l.time}</td><td>${l.staff}</td><td>${l.breakdown}</td></tr>`;
+            });
+
+            const sBody = document.getElementById('stock-logs-body');
+            sBody.innerHTML = stockLogs.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No stock movements recorded.</td></tr>' : '';
+            stockLogs.forEach(l => {
+                const badge = l.type === 'IN' ? '<span class="badge badge-in">IN</span>' : '<span class="badge badge-out">OUT</span>';
+                sBody.innerHTML += `<tr><td>${l.date}</td><td>${badge}</td><td>${l.item}</td><td>${l.qty}</td><td>${l.staff}</td></tr>`;
+            });
+        }
+    </script>
+</body>
+</html>
