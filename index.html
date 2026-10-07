@@ -331,13 +331,21 @@
             font-weight: 600;
         }
 
-        .clickable-row {
+        /* Log Details & Interactive Badges */
+        .badge-clickable {
             cursor: pointer;
-            transition: background-color 0.15s ease;
+            padding: 0.35rem 0.7rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: inline-block;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            user-select: none;
         }
 
-        .clickable-row:hover {
-            background-color: #f1f5f9;
+        .badge-clickable:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .log-expandable-row {
@@ -351,46 +359,30 @@
 
         .log-details-box {
             padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-        }
-
-        .log-detail-section {
-            font-size: 0.85rem;
-        }
-
-        .log-detail-title {
-            font-weight: 700;
-            margin-bottom: 0.3rem;
-            display: inline-block;
+            border-left: 4px solid var(--primary);
+            background: #ffffff;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            box-shadow: inset 0 0 0 1px var(--border-color);
         }
 
         .log-item-tags {
             display: flex;
             flex-wrap: wrap;
             gap: 0.4rem;
-            margin-top: 0.2rem;
+            margin-top: 0.5rem;
         }
 
         .log-item-tag {
-            padding: 0.2rem 0.6rem;
+            padding: 0.25rem 0.6rem;
             border-radius: 6px;
             font-size: 0.8rem;
             font-weight: 600;
         }
 
-        .tag-in { background: var(--green-bg); color: #065f46; }
-        .tag-low { background: var(--amber-bg); color: #92400e; }
-        .tag-out { background: var(--red-bg); color: #991b1b; }
-
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.75rem;
-            display: inline-block;
-        }
+        .tag-in { background: var(--green-bg); color: #065f46; border: 1px solid var(--green); }
+        .tag-low { background: var(--amber-bg); color: #92400e; border: 1px solid var(--amber); }
+        .tag-out { background: var(--red-bg); color: #991b1b; border: 1px solid var(--red); }
 
         .badge-in { background: var(--green-bg); color: #065f46; }
         .badge-low { background: var(--amber-bg); color: #92400e; }
@@ -645,14 +637,15 @@
             <h2>Submission & Stock Movement Logs</h2>
         </div>
 
-        <h3 style="color: var(--primary); margin: 1rem 0 0.5rem 0;">Closing Inspections <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">(Click any row to view item details)</span></h3>
+        <h3 style="color: var(--primary); margin: 1rem 0 0.5rem 0;">Closing Inspections <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">(Click any count badge to view exact ingredients)</span></h3>
         <table>
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Time</th>
-                    <th>Staff</th>
-                    <th>In / Low / Out Summary</th>
+                    <th>Staff Name</th>
+                    <th>In Stock</th>
+                    <th>Low Stock</th>
+                    <th>Out of Stock</th>
                 </tr>
             </thead>
             <tbody id="checklist-logs-body"></tbody>
@@ -869,8 +862,7 @@
                 staff: staff,
                 inItems: inItems,
                 lowItems: lowItems,
-                outItems: outItems,
-                breakdown: `<span class="badge badge-in">In: ${inItems.length}</span> <span class="badge badge-low">Low: ${lowItems.length}</span> <span class="badge badge-out">Out: ${outItems.length}</span>`
+                outItems: outItems
             };
 
             checklistLogs.unshift(log);
@@ -1013,45 +1005,83 @@
             renderBuyingList();
         }
 
-        function toggleLogDetails(index) {
+        function toggleLogCategory(index, category) {
             const detailRow = document.getElementById(`log-detail-row-${index}`);
-            if (detailRow) {
-                detailRow.classList.toggle('active');
+            const contentBox = document.getElementById(`log-detail-content-${index}`);
+            
+            const isCurrentlyActive = detailRow.classList.contains('active') && detailRow.dataset.activeCat === category;
+
+            if (isCurrentlyActive) {
+                detailRow.classList.remove('active');
+                detailRow.dataset.activeCat = '';
+                return;
             }
+
+            const log = checklistLogs[index];
+            let items = [];
+            let title = '';
+            let tagClass = '';
+
+            if (category === 'IN') {
+                items = log.inItems || [];
+                title = `In Stock Ingredients (${items.length})`;
+                tagClass = 'tag-in';
+            } else if (category === 'LOW') {
+                items = log.lowItems || [];
+                title = `Low Stock Ingredients (${items.length})`;
+                tagClass = 'tag-low';
+            } else if (category === 'OUT') {
+                items = log.outItems || [];
+                title = `Out of Stock Ingredients (${items.length})`;
+                tagClass = 'tag-out';
+            }
+
+            let tagsHtml = items.map(i => `<span class="log-item-tag ${tagClass}">${i}</span>`).join('');
+            if (items.length === 0) {
+                tagsHtml = '<p style="color:var(--text-muted); font-size:0.85rem;">No items recorded in this state.</p>';
+            }
+
+            contentBox.innerHTML = `
+                <strong style="font-size:0.9rem; color:var(--text-dark); display:block; margin-bottom:0.4rem;">${title}</strong>
+                <div class="log-item-tags">${tagsHtml}</div>
+            `;
+
+            detailRow.classList.add('active');
+            detailRow.dataset.activeCat = category;
         }
 
         function renderLogs() {
             const cBody = document.getElementById('checklist-logs-body');
-            cBody.innerHTML = checklistLogs.length === 0 ? '<tr><td colspan="4" style="text-align:center;">No submissions logged yet.</td></tr>' : '';
+            cBody.innerHTML = checklistLogs.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No submissions logged yet.</td></tr>' : '';
             
             checklistLogs.forEach((l, index) => {
-                const inList = (l.inItems || []).map(i => `<span class="log-item-tag tag-in">${i}</span>`).join(' ') || '<span style="color:var(--text-muted)">None</span>';
-                const lowList = (l.lowItems || []).map(i => `<span class="log-item-tag tag-low">${i}</span>`).join(' ') || '<span style="color:var(--text-muted)">None</span>';
-                const outList = (l.outItems || []).map(i => `<span class="log-item-tag tag-out">${i}</span>`).join(' ') || '<span style="color:var(--text-muted)">None</span>';
+                const inCount = (l.inItems || []).length;
+                const lowCount = (l.lowItems || []).length;
+                const outCount = (l.outItems || []).length;
 
                 cBody.innerHTML += `
-                    <tr class="clickable-row" onclick="toggleLogDetails(${index})">
-                        <td>${l.date}</td>
-                        <td>${l.time}</td>
+                    <tr>
+                        <td><strong>${l.date}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">${l.time || ''}</span></td>
                         <td>${l.staff}</td>
-                        <td>${l.breakdown} ▾</td>
+                        <td>
+                            <span class="badge-clickable badge-in" onclick="toggleLogCategory(${index}, 'IN')">
+                                ${inCount} Items ▾
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge-clickable badge-low" onclick="toggleLogCategory(${index}, 'LOW')">
+                                ${lowCount} Items ▾
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge-clickable badge-out" onclick="toggleLogCategory(${index}, 'OUT')">
+                                ${outCount} Items ▾
+                            </span>
+                        </td>
                     </tr>
-                    <tr id="log-detail-row-${index}" class="log-expandable-row">
-                        <td colspan="4">
-                            <div class="log-details-box">
-                                <div class="log-detail-section">
-                                    <span class="log-detail-title" style="color:#065f46">In Stock (${(l.inItems || []).length}):</span>
-                                    <div class="log-item-tags">${inList}</div>
-                                </div>
-                                <div class="log-detail-section">
-                                    <span class="log-detail-title" style="color:#92400e">Low Stock (${(l.lowItems || []).length}):</span>
-                                    <div class="log-item-tags">${lowList}</div>
-                                </div>
-                                <div class="log-detail-section">
-                                    <span class="log-detail-title" style="color:#991b1b">Out of Stock (${(l.outItems || []).length}):</span>
-                                    <div class="log-item-tags">${outList}</div>
-                                </div>
-                            </div>
+                    <tr id="log-detail-row-${index}" class="log-expandable-row" data-active-cat="">
+                        <td colspan="5">
+                            <div class="log-details-box" id="log-detail-content-${index}"></div>
                         </td>
                     </tr>
                 `;
