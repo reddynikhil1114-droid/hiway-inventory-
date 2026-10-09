@@ -331,7 +331,6 @@
             font-weight: 600;
         }
 
-        /* Log Details & Interactive Badges */
         .badge-clickable {
             cursor: pointer;
             padding: 0.35rem 0.7rem;
@@ -591,7 +590,7 @@
         </form>
     </div>
 
-    <!-- 3. BUYING LIST VIEW -->
+    <!-- 3. BUYING LIST & GAS EXPENSE VIEW -->
     <div id="buying-view" class="view-section">
         <button class="btn-back" onclick="goHome()">← Back to Home</button>
         <div class="section-header">
@@ -621,7 +620,28 @@
             <div id="breakdown-list" class="breakdown-list"></div>
         </div>
 
-        <h3 style="color: var(--primary); margin: 1.5rem 0 1rem 0;">Manual Buying List</h3>
+        <!-- GAS & FUEL EXPENSE PHOTO CAPTURE SECTION -->
+        <div style="margin-top: 2rem; padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 16px; background: #ffffff;">
+            <h3 style="color: var(--primary); margin-bottom: 0.5rem;">⛽ Record Gas & Fuel Expense</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Use the live camera to capture required gas documentation:</p>
+            <form onsubmit="handleGasSubmission(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>1. Live Gas Bill Photo</label>
+                        <input type="file" id="gas-bill-input" accept="image/*" capture="environment" required onchange="previewCapturedImage(this, 'bill-preview')">
+                        <img id="bill-preview" style="display:none; width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; margin-top: 0.5rem;" />
+                    </div>
+                    <div class="form-group">
+                        <label>2. Live Odometer Photo</label>
+                        <input type="file" id="odometer-input" accept="image/*" capture="environment" required onchange="previewCapturedImage(this, 'odometer-preview')">
+                        <img id="odometer-preview" style="display:none; width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; margin-top: 0.5rem;" />
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top: 0.5rem;">Submit Gas Receipts</button>
+            </form>
+        </div>
+
+        <h3 style="color: var(--primary); margin: 2rem 0 1rem 0;">Manual Buying List</h3>
         <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
             <input type="text" id="new-buying-item" placeholder="Add custom item to buy...">
             <button class="btn-primary" style="width: auto; white-space: nowrap;" onclick="addBuyingItem()">Add</button>
@@ -925,6 +945,36 @@
                     listEl.appendChild(chip);
                 });
             }
+        }
+
+        function previewCapturedImage(input, previewId) {
+            const preview = document.getElementById(previewId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function handleGasSubmission(e) {
+            e.preventDefault();
+            const billInput = document.getElementById('gas-bill-input');
+            const odometerInput = document.getElementById('odometer-input');
+
+            if (!billInput.files[0] || !odometerInput.files[0]) {
+                alert('Please take both the live Gas Bill and Odometer photos.');
+                return;
+            }
+
+            alert('Gas receipt and odometer photos recorded successfully!');
+            
+            billInput.value = '';
+            odometerInput.value = '';
+            document.getElementById('bill-preview').style.display = 'none';
+            document.getElementById('odometer-preview').style.display = 'none';
         }
 
         function setMovementMode(mode) {
