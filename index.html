@@ -398,16 +398,6 @@
             margin-bottom: 0.75rem;
         }
 
-        .btn-delete {
-            background: var(--red-bg);
-            color: var(--red);
-            border: none;
-            padding: 0.4rem 0.8rem;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
         .status-summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -535,14 +525,14 @@
                     <label>Staff Signature Name</label>
                     <input type="text" id="employee-name" placeholder="Enter your full name">
                 </div>
-                <button id="submit-checklist-btn" class="btn-primary" disabled onclick="submitChecklist()">Submit Inspection Report</button>
+                <button id="submit-checklist-btn" class="btn-primary" disabled onclick="submitChecklist()">Submit Inspection Report (Locked Upon Submission)</button>
             </div>
         </div>
 
         <div id="checklist-locked-content" style="display: none;">
             <div class="submitted-lock-banner">
-                <h3>✓ Closing Inspection Submitted for Today</h3>
-                <p>The daily closing checklist has already been completed. Further submissions for today are locked.</p>
+                <h3>🔒 Closing Inspection Submitted & Locked for Today</h3>
+                <p>The daily closing checklist has been completed for today. Submissions are locked and cannot be edited. It will automatically unlock tomorrow.</p>
             </div>
         </div>
     </div>
@@ -586,13 +576,13 @@
                     <input type="text" id="stock-staff" placeholder="Staff Name" required>
                 </div>
             </div>
-            <button type="submit" id="movement-submit-btn" class="btn-primary">Save Stock Entry</button>
+            <button type="submit" id="movement-submit-btn" class="btn-primary">Save Permanent Stock Entry</button>
         </form>
 
         <!-- NET STOCK BALANCE SUMMARY BOARD -->
         <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
             <h3 style="color: var(--primary); margin-bottom: 0.5rem;">📊 Current Calculated Net Stock</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Calculated total based on all recorded IN and OUT entries:</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Calculated cumulative total based on all recorded IN and OUT entries:</p>
             <div id="net-stock-container" class="breakdown-list"></div>
         </div>
     </div>
@@ -664,7 +654,7 @@
             <h2>Submission & Stock Movement Logs</h2>
         </div>
 
-        <h3 style="color: var(--primary); margin: 1rem 0 0.5rem 0;">Closing Inspections <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">(Click any count badge to view exact ingredients)</span></h3>
+        <h3 style="color: var(--primary); margin: 1rem 0 0.5rem 0;">Closing Inspections <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">(Immutable Permanent Logs)</span></h3>
         <table>
             <thead>
                 <tr>
@@ -860,6 +850,11 @@
         }
 
         function submitChecklist() {
+            if (isChecklistSubmittedToday()) {
+                alert('Inspection already submitted for today and locked!');
+                return;
+            }
+
             const staff = document.getElementById('employee-name').value.trim();
             if (!staff) {
                 alert('Please enter your staff signature name.');
@@ -897,7 +892,7 @@
             localStorage.setItem('checklistLogs', JSON.stringify(checklistLogs));
             localStorage.setItem('lastSubmittedDate', todayStr);
 
-            alert('Checklist inspection submitted! Restock items appended to Buying List.');
+            alert('Checklist inspection submitted! Report locked for today.');
             document.getElementById('employee-name').value = '';
             itemStatus = {};
 
@@ -977,7 +972,7 @@
                 return;
             }
 
-            alert('Gas receipt and odometer photos recorded successfully!');
+            alert('Gas receipt and odometer photos permanently recorded!');
             
             billInput.value = '';
             odometerInput.value = '';
@@ -1022,7 +1017,7 @@
             stockLogs.unshift(log);
             localStorage.setItem('stockLogs', JSON.stringify(stockLogs));
 
-            alert(`Logged ${currentMode} movement!`);
+            alert(`Logged ${currentMode} movement permanently!`);
             document.getElementById('stock-qty').value = '';
             document.getElementById('stock-staff').value = '';
             renderLogs();
@@ -1080,7 +1075,6 @@
                 div.className = 'buying-item';
                 div.innerHTML = `
                     <span style="font-weight: 600;">${item}</span>
-                    <button class="btn-delete" onclick="removeBuyingItem(${index})">Remove</button>
                 `;
                 container.appendChild(div);
             });
@@ -1094,12 +1088,6 @@
                 document.getElementById('new-buying-item').value = '';
                 renderBuyingList();
             }
-        }
-
-        function removeBuyingItem(index) {
-            buyingList.splice(index, 1);
-            localStorage.setItem('buyingList', JSON.stringify(buyingList));
-            renderBuyingList();
         }
 
         function toggleLogCategory(index, category) {
