@@ -588,6 +588,13 @@
             </div>
             <button type="submit" id="movement-submit-btn" class="btn-primary">Save Stock Entry</button>
         </form>
+
+        <!-- NET STOCK BALANCE SUMMARY BOARD -->
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+            <h3 style="color: var(--primary); margin-bottom: 0.5rem;">📊 Current Calculated Net Stock</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Calculated total based on all recorded IN and OUT entries:</p>
+            <div id="net-stock-container" class="breakdown-list"></div>
+        </div>
     </div>
 
     <!-- 3. BUYING LIST & GAS EXPENSE VIEW -->
@@ -753,6 +760,7 @@
             renderBuyingList();
             renderLogs();
             updateBreakdownCounts();
+            renderNetStockSummary();
         });
 
         function isChecklistSubmittedToday() {
@@ -1018,7 +1026,46 @@
             document.getElementById('stock-qty').value = '';
             document.getElementById('stock-staff').value = '';
             renderLogs();
+            renderNetStockSummary();
             goHome();
+        }
+
+        function renderNetStockSummary() {
+            const container = document.getElementById('net-stock-container');
+            container.innerHTML = '';
+
+            let balances = {};
+
+            stockLogs.forEach(log => {
+                const key = log.item;
+                const qtyVal = parseFloat(log.qty) || 0;
+                const unitStr = log.qty.toString().replace(/[0-9.]/g, '').trim();
+
+                if (!balances[key]) {
+                    balances[key] = { qty: 0, unit: unitStr };
+                }
+
+                if (log.type === 'IN') {
+                    balances[key].qty += qtyVal;
+                } else if (log.type === 'OUT') {
+                    balances[key].qty -= qtyVal;
+                }
+            });
+
+            const items = Object.keys(balances);
+            if (items.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">No stock movements recorded yet.</p>';
+                return;
+            }
+
+            items.forEach(item => {
+                const b = balances[item];
+                const chip = document.createElement('div');
+                chip.className = 'breakdown-chip';
+                chip.style.border = b.qty < 0 ? '1px solid var(--red)' : '1px solid var(--border-color)';
+                chip.innerHTML = `<strong>${item}:</strong> ${b.qty} ${b.unit}`;
+                container.appendChild(chip);
+            });
         }
 
         function renderBuyingList() {
